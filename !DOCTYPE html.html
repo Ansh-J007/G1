@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA Inter Group 1 - Final Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #2E3440; 
+            --card-bg: #3B4252;
+            --text-primary: #ECEFF4;
+            --text-secondary: #D8DEE9;
+            --border: #4C566A;
+            --accent: #88C0D0;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --complete: #A3BE8C;
+            --progress: #EBCB8B;
+            --incomplete: #BF616A;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+        }
+        body.modal-open { overflow: hidden; }
+        .main-container { max-width: 1200px; margin: auto; opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease;}
+        body.app-loaded .main-container { opacity: 1; transform: translateY(0); }
+        h1 { font-size: 2.8em; font-weight: 700; text-align: center; color: var(--text-primary); margin-bottom: 20px; }
+        h3 { color: var(--text-primary); text-align: center; font-size: 1.5em; }
+        .progress-section { margin-bottom: 30px; background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow-color); border: 1px solid var(--border);}
+        .progress-bar-container { width: 100%; background-color: var(--bg); border-radius: 10px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 20px; background: var(--accent); transition: width 0.5s ease-in-out; }
+        #progressText { text-align: center; font-weight: 600; margin-top: 10px; color: var(--text-primary); }
+        .day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+        .day-card {
+            background-color: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; font-weight: 600; aspect-ratio: 1 / 0.6; cursor: pointer; transition: all 0.3s ease;
+        }
+        .day-card:hover { transform: translateY(-5px); box-shadow: 0 6px 20px var(--shadow-color); border-color: var(--accent); }
+        .day-card.all-complete { border-color: var(--complete); box-shadow: 0 0 10px #A3BE8C30;}
+        .day-card.in-progress { border-color: var(--progress); }
+        
+        .session-container { margin: 30px 0; background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow-color); overflow-x: auto; border: 1px solid var(--border);}
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        th, td { padding: 14px; border: 1px solid var(--border); text-align: left; vertical-align: middle; }
+        th { background-color: #4C566A; color: var(--text-primary); font-weight: 600; text-transform: uppercase; font-size: 0.9em;}
+        td { font-size: 0.95em; }
+        .g2-revision { border-left: 5px solid #7f8c8d; } .adv-accts { border-left: 5px solid #88C0D0; } .law { border-left: 5px solid #BF616A; } .dtax { border-left: 5px solid #B48EAD; } .gst { border-left: 5px solid #EBCB8B; }
+        
+        .action-cell button { background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; padding: 5px; opacity: 0.8; transition: all 0.2s; border-radius: 5px; margin: 0 2px;}
+        .action-cell button:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+        .action-cell svg { width: 20px; height: 20px; vertical-align: middle; }
+        td.status-complete { background-color: #A3BE8C20 !important; } td.status-progress { background-color: #EBCB8B20 !important; } td.status-incomplete { background-color: #BF616A20 !important; }
+        .status-btn.active { color: #2E3440 !important; transform: scale(1.1); }
+        .status-btn.complete.active { background-color: var(--complete); border-color: var(--complete); }
+        .status-btn.progress.active { background-color: var(--progress); border-color: var(--progress); }
+        .status-btn.incomplete.active { background-color: var(--incomplete); border-color: var(--incomplete); }
+
+        .modal-overlay { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { background-color: var(--card-bg); padding: 30px 40px; border-radius: 15px; width: 90%; max-width: 500px; position: relative; box-shadow: 0 5px 25px var(--shadow-color); text-align: center; border: 1px solid var(--border); }
+        .close-btn { position: absolute; top: 10px; right: 20px; color: var(--text-secondary); font-size: 28px; font-weight: bold; cursor: pointer; }
+        #notesTextarea { width: 100%; height: 300px; box-sizing: border-box; border: 1px solid var(--border); padding: 10px; font-size: 1em; line-height: 1.6em; font-family: 'Poppins', sans-serif; background-color: var(--bg); color: var(--text-primary); resize: vertical; margin-top: 15px; }
+        .modal-btn { display: block; width: 100%; padding: 12px; margin-top: 15px; background: var(--accent); color: #2E3440; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; transition: transform 0.2s; font-weight: 600;}
+        .modal-btn:hover { transform: scale(1.02); }
+        #modalUserIdInput { display: block; width: 100%; box-sizing: border-box; padding: 12px; margin-top: 15px; border: 2px solid var(--accent); border-radius: 8px; font-size: 1.1em; background: var(--bg); color: var(--text-primary); }
+        
+        .timer-screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; color: white; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; overflow: hidden !important; }
+        #realTimeClock { position: absolute; top: 20px; font-size: 1.5em; opacity: 0.8; }
+        #timerDisplay { font-weight: 700; margin-bottom: 20px; font-size: clamp(3.5rem, 18vw, 8em); }
+        .timer-controls { position: absolute; bottom: 5%; display: flex; gap: 15px; }
+        .timer-controls button { font-size: 0.9em; padding: 8px 16px; border-radius: 5px; background: black; color: white; cursor: pointer; border: 1px solid white; min-width: 100px; text-align: center; }
+
+        @media screen and (max-width: 600px) { h1 { font-size: 1.8em; } #realTimeClock { font-size: 1em; } .timer-controls button { font-size: 0.8em; padding: 6px 12px; min-width: 80px; } }
+    </style>
+</head>
+<body>
+
+<div class="main-container" style="display: none;">
+    <h1>G1 Study Blueprint</h1>
+    <div class="progress-section"><h3>Overall Progress</h3><div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div><p id="progressText">0% Complete</p></div>
+    <div class="day-grid" id="dayGrid"></div>
+    <div id="session-display-area"></div>
+</div>
+
+<div class="timer-screen" id="timerScreen"><div id="realTimeClock"></div><div id="timerDisplay">00:00:00</div><div class="timer-controls"><button id="playPauseBtn" onclick="togglePlayPause()">⏸ Pause</button><button onclick="stopTimer()">⏹ Stop & Save</button></div></div>
+
+<div id="notesModal" class="modal-overlay"><div class="modal-content"><span class="close-btn" onclick="closeNoteModal()">&times;</span><h3>Session Notes</h3><textarea id="notesTextarea" placeholder="Type your notes here..."></textarea><button id="saveNoteBtn" class="modal-btn" onclick="saveNote()">Save Note</button></div></div>
+
+<div id="userIdModal" class="modal-overlay"><div class="modal-content"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); margin: 0 auto 15px auto;"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg><h3>Welcome!</h3><p style="color: var(--text-secondary); font-size: 0.9em;">Please enter your Name or a unique ID to save and sync your progress.</p><input type="text" id="modalUserIdInput" placeholder="Enter Your ID here"><button id="modalSetUserBtn" class="modal-btn" onclick="setUserIdFromModal()">Load / Create User</button></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+    // --- MODIFIED: 24-Day Schedule with new types ---
+    const schedule = [
+        // Days 1-15: Conceptual Mastery
+        { s2: "PPE (AS 10) & Inv. (AS 13)", s3: "Incorporation", s4: "Basics & Status", s5: "GST Intro" },
+        { s2: "Inv. (AS 2) & Borrowing (AS 16)", s3: "LLP Act", s4: "Salaries", s5: "Supply Concept" },
+        { s2: "Cash Flow", s3: "Gen. Clauses (AWS)", s4: "House Property", s5: "Value of Supply" },
+        { s2: "Practice Day 1", s3: "Practice Day 1", s4: "Practice Day 1", s5: "Practice Day 1" },
+        { s2: "Internal Recon.", s3: "Interpretation", s4: "PGBP 1", s5: "GST Exemptions" },
+        { s2: "Buy-back", s3: "Foreign Co.", s4: "PGBP 2", s5: "ITC 1" },
+        { s2: "Branch Accts", s3: "Deposits/Charges (AWS)", s4: "Capital Gains 1", s5: "ITC 2" },
+        { s2: "Practice Day 2", s3: "Practice Day 2", s4: "Practice Day 2", s5: "Practice Day 2" },
+        { s2: "Amalgamation 1", s3: "Mgmt & Admin 1", s4: "Capital Gains 2", s5: "Place of Supply" },
+        { s2: "Amalgamation 2", s3: "Mgmt & Admin 2", s4: "Other Sources", s5: "Tax Invoice" },
+        { s2: "Consolidation", s3: "Dividend/Accts (AWS)", s4: "Clubbing", s5: "Registration" },
+        { s2: "Practice Day 3", s3: "Practice Day 3", s4: "Practice Day 3", s5: "Practice Day 3" },
+        { s2: "AS 4, 5, 11, 22", s3: "Audit & Auditors", s4: "Set-off/Carry Fwd", s5: "Payment of Tax" },
+        { s2: "AS 7, 9, 12", s3: "Prospectus", s4: "Deductions", s5: "GST Returns" },
+        { s2: "Mega Practice", s3: "Share Capital (AWS)", s4: "TDS/TCS", s5: "GST Revision" },
+        
+        // Days 16-24: Timed Practice & Mocks
+        { type: 'buffer', text: 'Buffer & Catch-up Day' }, // Day 16
+        { type: 'timed_practice', task: 'MTP/RTP Practice: Accounts' }, // Day 17
+        { type: 'timed_practice', task: 'MTP/RTP Practice: Law' }, // Day 18
+        { type: 'timed_practice', task: 'MTP/RTP Practice: Taxation' }, // Day 19
+        { type: 'timed_practice', task: 'Full Mock: Accounts' }, // Day 20
+        { type: 'revision', text: 'Analysis of Accounts Mock' }, // Day 21
+        { type: 'timed_practice', task: 'Full Mock: Law' }, // Day 22
+        { type: 'revision', text: 'Analysis of Law Mock' }, // Day 23
+        { type: 'timed_practice', task: 'Full Mock: Taxation' }, // Day 24
+    ];
+
+    let userId=null,db;
+    const firebaseConfig={apiKey:"AIzaSyDA_JymyCYdWUaBVIjw5coXFAahD_cGJN8",authDomain:"g1tracker-8c59c.firebaseapp.com",databaseURL:"https://g1tracker-8c59c-default-rtdb.firebaseio.com",projectId:"g1tracker-8c59c",storageBucket:"g1tracker-8c59c.firebasestorage.app",messagingSenderId:"1025243612084",appId:"1:1025243612084:web:bbdcbce3c4fa7afa5628e1",measurementId:"G-1E304X47D5"};
+    let timerInterval,clockInterval,startTime,currentSessionId=null,isTimerPaused=!1,timeWhenPaused=0,currentNoteSessionId=null;
+    
+    window.onload=function(){initializeFirebase();const savedUserId=localStorage.getItem("ca_inter_g1_userId");if(savedUserId){document.getElementById('modalUserIdInput').value=savedUserId}document.getElementById('userIdModal').style.display='flex'};
+    function startApp(){document.getElementById('userIdModal').style.display='none';document.querySelector('.main-container').style.display='block';document.body.classList.add('app-loaded');generateDayCards();loadDataFromFirebase()}
+    function setUserIdFromModal(){const input=document.getElementById('modalUserIdInput').value.trim();if(!input){alert("Please enter a valid ID.");return}userId=input;localStorage.setItem("ca_inter_g1_userId",userId);startApp()}
+    
+    // --- MODIFIED: Functions to handle new schedule types ---
+    function generateDayCards(){const grid=document.getElementById('dayGrid');grid.innerHTML='';const totalDays = schedule.length; for(let i=1;i<=totalDays;i++){const card=document.createElement('div');card.className='day-card';card.innerText=`Day ${i}`;card.id=`day-card-${i}`;card.onclick=()=>toggleSession(i);grid.appendChild(card)}}
+    
+    function toggleSession(dayNumber){
+        const displayArea=document.getElementById('session-display-area');
+        displayArea.innerHTML='';
+        const dayData=schedule[dayNumber-1];
+        if(!dayData) return;
+
+        const container=document.createElement('div');
+        container.className='session-container';
+        let content=`<h3>Day ${dayNumber}</h3>`;
+
+        if(dayData.type === 'timed_practice'){
+            content += `<table><thead><tr><th>Task</th><th>Time & Actions</th><th>Status</th><th>Notes</th></tr></thead>
+                        <tbody>${generateTimedPracticeRow(dayNumber, dayData.task)}</tbody></table>`;
+        } else if (dayData.type) {
+            content+=`<p style="text-align:center; font-size:1.2em;"><strong>${dayData.text}</strong></p>`
+        } else {
+            content+=`<table><thead><tr><th>Session</th><th>Subject</th><th>Topic</th><th>Time & Actions</th><th>Status</th><th>Notes</th></tr></thead>
+                        <tbody>${generateSessionRow(dayNumber,1,'G2 Revision','Audit / SM')}
+                        ${generateSessionRow(dayNumber,2,'Adv. Accts',dayData.s2)}
+                        ${generateSessionRow(dayNumber,3,'Law',dayData.s3)}
+                        ${generateSessionRow(dayNumber,4,'DT',dayData.s4)}
+                        ${generateSessionRow(dayNumber,5,'GST',dayData.s5)}</tbody></table>`
+        }
+        container.innerHTML=content;
+        displayArea.appendChild(container);
+        loadLocalDataForDay(dayNumber);
+    }
+    
+    function generateTimedPracticeRow(day, task) {
+        const sessionId = `d${day}-s1`;
+        return `<tr><td>${task}</td>
+            <td class="action-cell"><button title="Start Timer" onclick="launchTimer('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></button> <span id="display-${sessionId}">00:00:00</span></td>
+            <td id="status-cell-${sessionId}" class="action-cell"><button title="Complete" class="status-btn complete" onclick="setStatus(this,'${sessionId}','complete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button title="In Progress" class="status-btn progress" onclick="setStatus(this,'${sessionId}','progress')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></button><button title="Incomplete" class="status-btn incomplete" onclick="setStatus(this,'${sessionId}','incomplete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td>
+            <td class="action-cell"><button class="notes-btn" id="note-btn-${sessionId}" title="Add/View Text Note" onclick="openNoteModal('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button></td>
+            </tr>`;
+    }
+    
+    function generateSessionRow(day,session,subject,topic){const subjectClass={'G2 Revision':'g2-revision','Adv. Accts':'adv-accts','Law':'law','DT':'dtax','GST':'gst'}[subject]||'';const sessionId=`d${day}-s${session}`;return`<tr class="${subjectClass}"><td>S${session}</td><td>${subject}</td><td>${topic}</td><td class="action-cell"><button title="Start Timer" onclick="launchTimer('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></button> <span id="display-${sessionId}">00:00:00</span></td><td id="status-cell-${sessionId}" class="action-cell"><button title="Complete" class="status-btn complete" onclick="setStatus(this,'${sessionId}','complete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button title="In Progress" class="status-btn progress" onclick="setStatus(this,'${sessionId}','progress')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></button><button title="Incomplete" class="status-btn incomplete" onclick="setStatus(this,'${sessionId}','incomplete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td><td class="action-cell"><button class="notes-btn" id="note-btn-${sessionId}" title="Add/View Text Note" onclick="openNoteModal('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button></td></tr>`}
+    
+    // --- The rest of the JS functions are a copy of the final version ---
+    function openNoteModal(sessionId){currentNoteSessionId=sessionId;const currentNote=localStorage.getItem(`note-${sessionId}`)||"";document.getElementById('notesTextarea').value=currentNote;document.getElementById('notesModal').style.display='flex';document.body.classList.add('modal-open')}
+    function saveNote(){const newNote=document.getElementById('notesTextarea').value;localStorage.setItem(`note-${currentNoteSessionId}`,newNote);if(userId&&db)db.ref(`notes/${userId}/${currentNoteSessionId}`).set(newNote);updateNoteButtonState(currentNoteSessionId);closeNoteModal()}
+    function closeNoteModal(){document.getElementById('notesModal').style.display='none';document.body.classList.remove('modal-open')}
+    function updateNoteButtonState(sessionId){const note=localStorage.getItem(`note-${sessionId}`);const btn=document.getElementById(`note-btn-${sessionId}`);if(btn)btn.style.color=(note&&note.trim()!=="")?'var(--complete)':'currentColor'}
+    function setStatus(clickedButton,sessionId,status){const td=clickedButton.parentElement;if(!td)return;localStorage.setItem(`status-${sessionId}`,status);if(userId)db.ref(`statuses/${userId}/${sessionId}`).set(status);const allButtons=td.querySelectorAll('.status-btn');allButtons.forEach(btn=>btn.classList.remove('active'));clickedButton.classList.add('active');td.parentElement.className=`action-cell status-${status}`;updateOverallProgress();updateDayCardStatus()}
+    function loadLocalDataForDay(dayNumber){const dayData=schedule[dayNumber-1];if(!dayData)return;if(dayData.type==='timed_practice'){const sessionId=`d${dayNumber}-s1`;const time=localStorage.getItem(`timer-${sessionId}`);const status=localStorage.getItem(`status-${sessionId}`);const displayEl=document.getElementById(`display-${sessionId}`);if(displayEl&&time)displayEl.innerText=formatTime(parseInt(time,10));const statusCell=document.getElementById(`status-cell-${sessionId}`);if(statusCell&&status){statusCell.parentElement.className=`action-cell status-${status}`;const activeButton=statusCell.querySelector(`.status-btn.${status}`);if(activeButton)activeButton.classList.add('active')}updateNoteButtonState(sessionId)}else if(!dayData.type){for(let i=1;i<=5;i++){const sessionId=`d${dayNumber}-s${i}`;const time=localStorage.getItem(`timer-${sessionId}`);const status=localStorage.getItem(`status-${sessionId}`);const displayEl=document.getElementById(`display-${sessionId}`);if(displayEl&&time)displayEl.innerText=formatTime(parseInt(time,10));const statusCell=document.getElementById(`status-cell-${sessionId}`);if(statusCell&&status){statusCell.parentElement.className=`action-cell status-${status}`;const activeButton=statusCell.querySelector(`.status-btn.${status}`);if(activeButton)activeButton.classList.add('active')}updateNoteButtonState(sessionId)}}}
+    function initializeFirebase(){if(!firebase.apps.length){try{firebase.initializeApp(firebaseConfig);db=firebase.database()}catch(e){console.error("Firebase initialization failed:",e)}}else{db=firebase.database()}}
+    function launchTimer(sessionId){document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';const elem=document.documentElement;if(elem.requestFullscreen){elem.requestFullscreen()}else if(elem.webkitRequestFullscreen){elem.webkitRequestFullscreen()}else if(elem.msRequestFullscreen){elem.msRequestFullscreen()}currentSessionId=sessionId;document.getElementById("timerScreen").style.display="flex";const savedTime=parseInt(localStorage.getItem(`timer-${sessionId}`),10)||0;startTime=Date.now()-savedTime;isTimerPaused=!1;document.getElementById('playPauseBtn').innerHTML='⏸ Pause';clearInterval(timerInterval);timerInterval=setInterval(()=>{document.getElementById("timerDisplay").innerText=formatTime(Date.now()-startTime)},1e3);document.getElementById("realTimeClock").innerText=(new Date).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});clearInterval(clockInterval);clockInterval=setInterval(()=>{document.getElementById("realTimeClock").innerText=(new Date).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'})},1e3)}
+    function togglePlayPause(){if(isTimerPaused){isTimerPaused=!1;document.getElementById('playPauseBtn').innerHTML='⏸ Pause';startTime=Date.now()-timeWhenPaused;timerInterval=setInterval(()=>{document.getElementById("timerDisplay").innerText=formatTime(Date.now()-startTime)},1e3)}else{clearInterval(timerInterval);isTimerPaused=!0;document.getElementById('playPauseBtn').innerHTML='▶ Play';timeWhenPaused=Date.now()-startTime}}
+    function stopTimer(){document.documentElement.style.overflow='';document.body.style.overflow='';clearInterval(timerInterval);clearInterval(clockInterval);document.getElementById("timerScreen").style.display="none";if(document.exitFullscreen){document.exitFullscreen()}else if(document.webkitExitFullscreen){document.webkitExitFullscreen()}else if(document.msExitFullscreen){document.msExitFullscreen()}const elapsed=isTimerPaused?timeWhenPaused:Date.now()-startTime;localStorage.setItem(`timer-${currentSessionId}`,elapsed);const displayEl=document.getElementById(`display-${currentSessionId}`);if(displayEl)displayEl.innerText=formatTime(elapsed);if(userId)db.ref(`timers/${userId}/${currentSessionId}`).set(elapsed)}
+    function clearLocalData(){for(let i=1;i<=schedule.length;i++){const dayData=schedule[i-1];if(dayData.type==='timed_practice'){const sessionId=`d${i}-s1`;localStorage.removeItem(`timer-${sessionId}`);localStorage.removeItem(`status-${sessionId}`);localStorage.removeItem(`note-${sessionId}`)}else if(!dayData.type){for(let j=1;j<=5;j++){const sessionId=`d${i}-s${j}`;localStorage.removeItem(`timer-${sessionId}`);localStorage.removeItem(`status-${sessionId}`);localStorage.removeItem(`note-${sessionId}`)}}}}
+    function loadDataFromFirebase(){if(!userId||!db)return;const promises=[db.ref(`timers/${userId}`).once('value'),db.ref(`statuses/${userId}`).once('value'),db.ref(`notes/${userId}`).once('value')];Promise.all(promises).then(snapshots=>{const timerData=snapshots[0].val();if(timerData)for(let id in timerData)localStorage.setItem(`timer-${id}`,timerData[id]);const statusData=snapshots[1].val();if(statusData)for(let id in statusData)localStorage.setItem(`status-${id}`,statusData[id]);const notesData=snapshots[2].val();if(notesData)for(let id in notesData)localStorage.setItem(`note-${id}`,notesData[id]);updateUIFromLocal()}).catch(error=>console.error("Firebase load error:",error))}
+    function updateUIFromLocal(){const openContainer=document.querySelector('.session-container');if(openContainer){const dayNum=parseInt(openContainer.id.replace('day',''));loadLocalDataForDay(dayNum)}updateOverallProgress();updateDayCardStatus()}
+    function formatTime(ms){const totalSeconds=Math.floor(ms/1e3);const h=String(Math.floor(totalSeconds/3600)).padStart(2,'0');const m=String(Math.floor(totalSeconds%3600/60)).padStart(2,'0');const s=String(totalSeconds%60).padStart(2,'0');return`${h}:${m}:${s}`}
+    function updateOverallProgress(){let totalSessions=0,completedSessions=0;schedule.forEach((dayData,index)=>{const day=index+1;if(dayData.type==='timed_practice'){totalSessions++;if(localStorage.getItem(`status-d${day}-s1`)==='complete')completedSessions++}else if(!dayData.type){for(let i=1;i<=5;i++){totalSessions++;if(localStorage.getItem(`status-d${day}-s${i}`)==='complete')completedSessions++}}});const percentage=totalSessions>0?completedSessions/totalSessions*100:0;document.getElementById('progressBar').style.width=`${percentage}%`;document.getElementById('progressText').innerText=`${Math.round(percentage)}% Complete`}
+    function updateDayCardStatus(){const totalDays=schedule.length;for(let i=1;i<=totalDays;i++){const card=document.getElementById(`day-card-${i}`);if(!card)continue;card.className='day-card';const dayData=schedule[i-1];if(!dayData)continue;let sessionIds=[];if(dayData.type==='timed_practice'){sessionIds.push(`d${i}-s1`)}else if(!dayData.type){for(let j=1;j<=5;j++)sessionIds.push(`d${i}-s${j}`)}if(sessionIds.length===0)continue;let isAllComplete=!0,isInProgress=!1;sessionIds.forEach(sessionId=>{const status=localStorage.getItem(`status-${sessionId}`);if(status!=='complete')isAllComplete=!1;if(status==='progress')isInProgress=!0});if(isAllComplete)card.classList.add('all-complete');else if(isInProgress)card.classList.add('in-progress')}}
+</script>
+
+</body>
+</html>
