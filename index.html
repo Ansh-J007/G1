@@ -146,19 +146,18 @@
     window.onload=function(){initializeFirebase();const savedUserId=localStorage.getItem("ca_inter_g1_userId");if(savedUserId){document.getElementById('modalUserIdInput').value=savedUserId}document.getElementById('userIdModal').style.display='flex'};
     function startApp(){document.getElementById('userIdModal').style.display='none';document.querySelector('.main-container').style.display='block';document.body.classList.add('app-loaded');generateDayCards();loadDataFromFirebase()}
     
-    // MODIFIED: Added confirmation prompt before clearing data
     function setUserIdFromModal(){
         const input=document.getElementById('modalUserIdInput').value.trim();
         if(!input){alert("Please enter a valid ID.");return}
         
-        if(userId && userId !== input) { // Only prompt if a user is already set and it's a new ID
+        if(userId && userId !== input) { 
             const confirmChange = confirm("Are you sure you want to change your user ID? All unsynced local progress will be cleared and new data will be loaded.");
             if (!confirmChange) {
-                return; // User cancelled, do not change ID or clear data
+                return; 
             }
         }
 
-        if(userId !== input) { // Only clear if the ID is actually changing
+        if(userId !== input) { 
             clearLocalData();
         }
         
@@ -185,7 +184,8 @@
         modalContentContainer.innerHTML = content;
         document.getElementById('sessionModal').style.display = 'flex';
         document.body.classList.add('modal-open');
-        updateUIFromLocal(); 
+        // FIX: Directly call loadLocalDataForDay for the current day being opened in the modal
+        loadLocalDataForDay(dayNumber); 
     }
 
     function closeSessionModal() {
