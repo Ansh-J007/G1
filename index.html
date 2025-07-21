@@ -112,35 +112,80 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-    const schedule=[{s2:"PPE (AS 10) & Inv. (AS 13)",s3:"Incorporation",s4:"Basics & Status",s5:"GST Intro"},{s2:"Inv. (AS 2) & Borrowing (AS 16)",s3:"LLP Act",s4:"Salaries",s5:"Supply Concept"},{s2:"Cash Flow",s3:"Gen. Clauses (AWS)",s4:"House Property",s5:"Value of Supply"},{s2:"Practice Day 1",s3:"Practice Day 1",s4:"Practice Day 1",s5:"Practice Day 1"},{s2:"Internal Recon.",s3:"Interpretation",s4:"PGBP 1",s5:"GST Exemptions"},{s2:"Buy-back",s3:"Foreign Co.",s4:"PGBP 2",s5:"ITC 1"},{s2:"Branch Accts",s3:"Deposits/Charges (AWS)",s4:"Capital Gains 1",s5:"ITC 2"},{s2:"Practice Day 2",s3:"Practice Day 2",s4:"Practice Day 2",s5:"Practice Day 2"},{s2:"Amalgamation 1",s3:"Mgmt & Admin 1",s4:"Capital Gains 2",s5:"Place of Supply"},{s2:"Amalgamation 2",s3:"Mgmt & Admin 2",s4:"Other Sources",s5:"Tax Invoice"},{s2:"Consolidation",s3:"Dividend/Accts (AWS)",s4:"Clubbing",s5:"Registration"},{s2:"Practice Day 3",s3:"Practice Day 3",s4:"Practice Day 3",s5:"Practice Day 3"},{s2:"AS 4, 5, 11, 22",s3:"Audit & Auditors",s4:"Set-off/Carry Fwd",s5:"Payment of Tax"},{s2:"AS 7, 9, 12",s3:"Prospectus",s4:"Deductions",s5:"GST Returns"},{s2:"Mega Practice",s3:"Share Capital (AWS)",s4:"TDS/TCS",s5:"GST Revision"},{type:'buffer',text:'Buffer & Catch-up Day'},{type:'timed_practice',task:'MTP/RTP Practice: Accounts'},{type:'timed_practice',task:'MTP/RTP Practice: Law'},{type:'timed_practice',task:'MTP/RTP Practice: Taxation'},{type:'timed_practice',task:'Full Mock: Accounts'},{type:'revision',text:'Analysis of Accounts Mock'},{type:'timed_practice',task:'Full Mock: Law'},{type:'revision',text:'Analysis of Law Mock'},{type:'timed_practice',task:'Full Mock: Taxation'}];
+    const schedule=[
+        {s2:"PPE (AS 10) & Inv. (AS 13)",s3:"Incorporation",s4:"Basics & Status",s5:"GST Intro"},
+        {s2:"Inv. (AS 2) & Borrowing (AS 16)",s3:"LLP Act",s4:"Salaries",s5:"Supply Concept"},
+        {s2:"Cash Flow",s3:"Gen. Clauses (AWS)",s4:"House Property",s5:"Value of Supply"},
+        {s2:"Practice Day 1",s3:"Practice Day 1",s4:"Practice Day 1",s5:"Practice Day 1"},
+        {s2:"Internal Recon.",s3:"Interpretation",s4:"PGBP 1",s5:"GST Exemptions"},
+        {s2:"Buy-back",s3:"Foreign Co.",s4:"PGBP 2",s5:"ITC 1"},
+        {s2:"Branch Accts",s3:"Deposits/Charges (AWS)",s4:"Capital Gains 1",s5:"ITC 2"},
+        {s2:"Practice Day 2",s3:"Practice Day 2",s4:"Practice Day 2",s5:"Practice Day 2"},
+        {s2:"Amalgamation 1",s3:"Mgmt & Admin 1",s4:"Capital Gains 2",s5:"Place of Supply"},
+        {s2:"Amalgamation 2",s3:"Mgmt & Admin 2",s4:"Other Sources",s5:"Tax Invoice"},
+        {s2:"Consolidation",s3:"Dividend/Accts (AWS)",s4:"Clubbing",s5:"Registration"},
+        {s2:"Practice Day 3",s3:"Practice Day 3",s4:"Practice Day 3",s5:"Practice Day 3"},
+        {s2:"AS 4, 5, 11, 22",s3:"Audit & Auditors",s4:"Set-off/Carry Fwd",s5:"Payment of Tax"},
+        {s2:"AS 7, 9, 12",s3:"Prospectus",s4:"Deductions",s5:"GST Returns"},
+        {s2:"Mega Practice",s3:"Share Capital (AWS)",s4:"TDS/TCS",s5:"GST Revision"},
+        {type:'buffer',text:'Buffer & Catch-up Day'},
+        {type:'timed_practice',task:'MTP/RTP Practice: Accounts'},
+        {type:'timed_practice',task:'MTP/RTP Practice: Law'},
+        {type:'timed_practice',task:'MTP/RTP Practice: Taxation'},
+        {type:'timed_practice',task:'Full Mock: Accounts'},
+        {type:'revision',text:'Analysis of Accounts Mock'},
+        {type:'timed_practice',task:'Full Mock: Law'},
+        {type:'revision',text:'Analysis of Law Mock'},
+        {type:'timed_practice',task:'Full Mock: Taxation'}
+    ];
     let userId=null,db;
     const firebaseConfig={apiKey:"AIzaSyDA_JymyCYdWUaBVIjw5coXFAahD_cGJN8",authDomain:"g1tracker-8c59c.firebaseapp.com",databaseURL:"https://g1tracker-8c59c-default-rtdb.firebaseio.com",projectId:"g1tracker-8c59c",storageBucket:"g1tracker-8c59c.firebasestorage.app",messagingSenderId:"1025243612084",appId:"1:1025243612084:web:bbdcbce3c4fa7afa5628e1",measurementId:"G-1E304X47D5"};
     
-    // --- MODIFIED: Added lastOpenedDay global variable ---
     let timerInterval,clockInterval,startTime,currentSessionId=null,isTimerPaused=!1,timeWhenPaused=0,currentNoteSessionId=null,lastOpenedDay=null;
     
     window.onload=function(){initializeFirebase();const savedUserId=localStorage.getItem("ca_inter_g1_userId");if(savedUserId){document.getElementById('modalUserIdInput').value=savedUserId}document.getElementById('userIdModal').style.display='flex'};
     function startApp(){document.getElementById('userIdModal').style.display='none';document.querySelector('.main-container').style.display='block';document.body.classList.add('app-loaded');generateDayCards();loadDataFromFirebase()}
-    function setUserIdFromModal(){const input=document.getElementById('modalUserIdInput').value.trim();if(!input){alert("Please enter a valid ID.");return}if(userId!==input){clearLocalData()}userId=input;localStorage.setItem("ca_inter_g1_userId",userId);startApp()}
+    
+    // MODIFIED: Added confirmation prompt before clearing data
+    function setUserIdFromModal(){
+        const input=document.getElementById('modalUserIdInput').value.trim();
+        if(!input){alert("Please enter a valid ID.");return}
+        
+        if(userId && userId !== input) { // Only prompt if a user is already set and it's a new ID
+            const confirmChange = confirm("Are you sure you want to change your user ID? All unsynced local progress will be cleared and new data will be loaded.");
+            if (!confirmChange) {
+                return; // User cancelled, do not change ID or clear data
+            }
+        }
+
+        if(userId !== input) { // Only clear if the ID is actually changing
+            clearLocalData();
+        }
+        
+        userId=input;
+        localStorage.setItem("ca_inter_g1_userId",userId);
+        startApp();
+    }
+
     function generateDayCards(){const grid=document.getElementById('dayGrid');grid.innerHTML='';const totalDays = schedule.length; for(let i=1;i<=totalDays;i++){const card=document.createElement('div');card.className='day-card';card.innerText=`Day ${i}`;card.id=`day-card-${i}`;card.onclick=()=>openSessionModal(i);grid.appendChild(card)}}
     
     function openSessionModal(dayNumber){
-        lastOpenedDay = dayNumber; // Remember which day was opened
+        lastOpenedDay = dayNumber; 
         const modalContentContainer = document.getElementById('sessionModalContent');
         const dayData = schedule[dayNumber - 1];
         if (!dayData) return;
         let content = `<h3>Day ${dayNumber}</h3>`;
         if (dayData.type === 'timed_practice') {
             content += `<div id="sessionModalTableContainer"><table class="session-table"><thead><tr><th>Task</th><th>Timer</th><th>Status</th><th>Notes</th></tr></thead><tbody>${generateTimedPracticeRow(dayNumber, dayData.task)}</tbody></table></div>`;
-        } else if (dayData.type) {
+        } else if (dayData.type === 'buffer' || dayData.type === 'revision') { 
             content += `<p style="text-align:center; font-size:1.2em;"><strong>${dayData.text}</strong></p>`;
         } else {
             content += `<div id="sessionModalTableContainer"><table class="session-table"><thead><tr><th>Session</th><th>Subject</th><th>Topic</th><th>Timer</th><th>Status</th><th>Notes</th></tr></thead><tbody>${generateSessionRow(dayNumber,1,'G2 Revision','Audit / SM')}${generateSessionRow(dayNumber,2,'Adv. Accts',dayData.s2)}${generateSessionRow(dayNumber,3,'Law',dayData.s3)}${generateSessionRow(dayNumber,4,'DT',dayData.s4)}${generateSessionRow(dayNumber,5,'GST',dayData.s5)}</tbody></table></div>`;
         }
         modalContentContainer.innerHTML = content;
-        loadLocalDataForDay(dayNumber);
         document.getElementById('sessionModal').style.display = 'flex';
         document.body.classList.add('modal-open');
+        updateUIFromLocal(); 
     }
 
     function closeSessionModal() {
@@ -148,27 +193,25 @@
         document.body.classList.remove('modal-open');
     }
     
-    // --- MODIFIED: Timer and Notes functions to handle session modal visibility ---
     function launchTimer(sessionId){
-        closeSessionModal(); // Close session modal before starting timer
+        closeSessionModal(); 
         document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';const elem=document.documentElement;if(elem.requestFullscreen){elem.requestFullscreen()}else if(elem.webkitRequestFullscreen){elem.webkitRequestFullscreen()}else if(elem.msRequestFullscreen){elem.msRequestFullscreen()}currentSessionId=sessionId;document.getElementById("timerScreen").style.display="flex";const savedTime=parseInt(localStorage.getItem(`timer-${sessionId}`),10)||0;startTime=Date.now()-savedTime;isTimerPaused=!1;document.getElementById('playPauseBtn').innerHTML='⏸ Pause';clearInterval(timerInterval);timerInterval=setInterval(()=>{document.getElementById("timerDisplay").innerText=formatTime(Date.now()-startTime)},1e3);document.getElementById("realTimeClock").innerText=(new Date).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});clearInterval(clockInterval);clockInterval=setInterval(()=>{document.getElementById("realTimeClock").innerText=(new Date).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'})},1e3)}
     
     function stopTimer(){
         document.documentElement.style.overflow='';document.body.style.overflow='';clearInterval(timerInterval);clearInterval(clockInterval);document.getElementById("timerScreen").style.display="none";if(document.exitFullscreen){document.exitFullscreen()}else if(document.webkitExitFullscreen){document.webkitExitFullscreen()}else if(document.msExitFullscreen){document.msExitFullscreen()}const elapsed=isTimerPaused?timeWhenPaused:Date.now()-startTime;localStorage.setItem(`timer-${currentSessionId}`,elapsed);const displayEl=document.getElementById(`display-${currentSessionId}`);if(displayEl)displayEl.innerText=formatTime(elapsed);if(userId)db.ref(`timers/${userId}/${currentSessionId}`).set(elapsed);
-        if(lastOpenedDay) openSessionModal(lastOpenedDay); // Reopen session modal
+        if(lastOpenedDay) openSessionModal(lastOpenedDay); 
     }
 
     function openNoteModal(sessionId){
-        closeSessionModal(); // Close session modal before opening notes
+        closeSessionModal(); 
         currentNoteSessionId=sessionId;const currentNote=localStorage.getItem(`note-${sessionId}`)||"";document.getElementById('notesTextarea').value=currentNote;document.getElementById('notesModal').style.display='flex';document.body.classList.add('modal-open')
     }
     
     function closeNoteModal(){
         document.getElementById('notesModal').style.display='none';document.body.classList.remove('modal-open');
-        if(lastOpenedDay) openSessionModal(lastOpenedDay); // Reopen session modal
+        if(lastOpenedDay) openSessionModal(lastOpenedDay); 
     }
     
-    // --- All other JS functions are a copy of the final version ---
     function generateTimedPracticeRow(day,task){const sessionId=`d${day}-s1`;return`<tr><td>${task}</td><td class="action-cell"><button title="Start Timer" onclick="launchTimer('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></button> <span id="display-${sessionId}">00:00:00</span></td><td id="status-cell-${sessionId}" class="action-cell"><button title="Complete" class="status-btn complete" onclick="setStatus(this,'${sessionId}','complete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button title="Incomplete" class="status-btn incomplete" onclick="setStatus(this,'${sessionId}','incomplete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td><td class="action-cell"><button class="notes-btn" id="note-btn-${sessionId}" title="Add/View Text Note" onclick="openNoteModal('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button></td></tr>`}
     function generateSessionRow(day,session,subject,topic){const subjectClass={'G2 Revision':'g2-revision','Adv. Accts':'adv-accts','Law':'law','DT':'dtax','GST':'gst'}[subject]||'';const sessionId=`d${day}-s${session}`;return`<tr class="${subjectClass}"><td>S${session}</td><td>${subject}</td><td>${topic}</td><td class="action-cell"><button title="Start Timer" onclick="launchTimer('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></button> <span id="display-${sessionId}">00:00:00</span></td><td id="status-cell-${sessionId}" class="action-cell"><button title="Complete" class="status-btn complete" onclick="setStatus(this,'${sessionId}','complete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button title="Incomplete" class="status-btn incomplete" onclick="setStatus(this,'${sessionId}','incomplete')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td><td class="action-cell"><button class="notes-btn" id="note-btn-${sessionId}" title="Add/View Text Note" onclick="openNoteModal('${sessionId}')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button></td></tr>`}
     function saveNote(){const newNote=document.getElementById('notesTextarea').value;localStorage.setItem(`note-${currentNoteSessionId}`,newNote);if(userId&&db)db.ref(`notes/${userId}/${currentNoteSessionId}`).set(newNote);updateNoteButtonState(currentNoteSessionId);closeNoteModal()}
